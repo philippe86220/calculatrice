@@ -5,7 +5,7 @@ import tkinter as tk
 import math
 from tkmacosx import Button
 from tkinter import messagebox
-
+import re
 
 # On définit une classe qui dérive de la classe Tk (la classe de fenêtre).
 class Calculatrice(tk.Tk):
@@ -22,8 +22,7 @@ class Calculatrice(tk.Tk):
 
     def ajout_calcul(self,symbol):
         self.calcul += str(symbol)
-        self.var.set(self.calcul)
-       
+        self.var.set(self.calcul)   
         
     def eval_calcul(self):
         try:
@@ -36,12 +35,72 @@ class Calculatrice(tk.Tk):
            
         except:
             self.effacer_ecran()
-            self.var.set("erreur") 
+            self.var.set("erreur")
             
+    def clavier(self,event):
+        clavier = ('.','0','1','2','3','4','5','6','7','8','9','/','*','-','+','(',')')
+        if event.char in clavier:
+            self.ajout_calcul(event.char)
+        
     def effacer_ecran(self):
         self.calcul = ""
         self.var.set("0")
 
+    def unSurX(self):
+        try:
+            resultat = str(eval('1/ ' + self.calcul))
+            self.var.set(resultat)
+            self.operation = f"1 / {self.calcul}  = {resultat}"
+            self.list_operations.append(self.operation)
+            fenetre.title(f"{self.operation}")
+            self.calcul = resultat
+        except Exception as exc:
+            if isinstance(exc, ZeroDivisionError):
+               self.var.set("division par zéro")
+        
+    def pourcent(self):  
+        nombres = [float(c) for c in re.findall(r'-?\d+\.?\d*', self.calcul)]
+        if len(nombres) >1 :
+            resultat = (nombres[0] * nombres[1])/100
+            self.var.set(resultat)
+            self.operation = f"{nombres[1]} % de {nombres[0]}  = {resultat} "
+            self.list_operations.append(self.operation)
+            fenetre.title(f"{self.operation}")
+            self.calcul = str(nombres[0]) +  '+'  + str(resultat)
+        else:
+            resultat = nombres[0] / 100
+            self.var.set(resultat)
+            self.operation = f"1 % de {nombres[0]}  = {resultat} "
+            self.list_operations.append(self.operation)
+            self.calcul =  str(resultat)
+        
+    def binaire(self):
+        try:
+            self.operation = f"{self.calcul} = " 
+            self.calcul = bin((int(self.calcul)))
+            self.calcul= str( self.calcul)
+            self.operation += self.calcul
+            self.var.set(self.calcul)
+            self.list_operations.append(self.operation)
+            fenetre.title(f"{self.operation}")
+        except:
+            self.calcul=""
+            self.var.set("erreur votre valeur doit-être un entier")
+            
+    def hexa(self):
+        try:
+            self.operation = f"{self.calcul} = " 
+            self.calcul = hex((int(self.calcul)))
+            self.calcul= str( self.calcul)
+            self.operation += self.calcul
+            self.var.set(self.calcul)
+            self.list_operations.append(self.operation)
+            fenetre.title(f"{self.operation}")
+            
+        except:
+            self.var.set("erreur votre valeur doit-être un entier")
+            self.calcul=""
+            
     def racine_carre(self):
         #self.calcul =str(math.sqrt(float(eval(self.calcul))))
         self.operation = f"Racine carrée de {self.calcul} = " 
@@ -53,7 +112,7 @@ class Calculatrice(tk.Tk):
         fenetre.title(f"{self.operation}")
 
     def even_calcul(self,event):
-       self.eval_calcul()
+        self.eval_calcul()
         
     def secondaire(self):
         monTexte = ""
@@ -62,7 +121,7 @@ class Calculatrice(tk.Tk):
         self.var2 = tk.StringVar()
         self.var2.set(monTexte)
         toplevel = tk.Toplevel()
-        toplevel.geometry('600x550')
+        toplevel.geometry('800x750')
         label = tk.Label(toplevel, textvariable=self.var2,fg="black", font=("Arial", 15))
         label.pack()
     
@@ -98,85 +157,102 @@ class Calculatrice(tk.Tk):
         self.text_resultat = tk.Label(self, textvariable=self.var, anchor='e',  bg="#a2af77", fg="white", font=("Arial", 24))
         self.text_resultat.grid(column=0, row=0, columnspan=4,**self.default_button_grid)
         self.var.set("0")
-        
+
         # Seconde ligne
         self.mc = Button(self, text="C", **self.default_button_style, command = self.effacer_ecran )
         self.mc.grid(column=0, row=1, **self.default_button_grid)
 
-        self.mplus = Button(self, text="√", **self.default_button_style, command = lambda : self.racine_carre() )
-        self.mplus.grid(column=1, row=1, **self.default_button_grid)
+        self.racine = Button(self, text="√", **self.default_button_style, command = lambda : self.racine_carre() )
+        self.racine.grid(column=1, row=1, **self.default_button_grid)
+
+        self.pi = Button(self, text="π", **self.default_button_style, command = lambda : self.ajout_calcul(math.pi))
+        self.pi.grid(column=2, row=1, **self.default_button_grid)
 
         self.div = Button(self, text="/", **self.default_button_style, command = lambda : self.ajout_calcul("/"))
-        self.div.grid(column=2, row=1, **self.default_button_grid)
-
-        self.mul = Button(self, text="*", **self.default_button_style, command = lambda : self.ajout_calcul("*"))
-        self.mul.grid(column=3, row=1, **self.default_button_grid)
+        self.div.grid(column=3, row=1, **self.default_button_grid)
         
-       # Troisième ligne
-        self.d7 = Button(self, text="mem", **self.default_button_style, command = lambda : self.secondaire())
-        self.d7.grid(column=0, row=2, **self.default_button_grid)
+        
+        # Troisième ligne
+        self.bin = Button(self, text="bin", **self.default_button_style, command = self.binaire)
+        self.bin.grid(column=0, row=2, **self.default_button_grid)
 
-        self.d8 = Button(self, text="(", **self.default_button_style, command = lambda : self.ajout_calcul("("))
-        self.d8.grid(column=1, row=2, **self.default_button_grid)
+        self.hex = Button(self, text="hex", **self.default_button_style, command = self.hexa )
+        self.hex.grid(column=1, row=2, **self.default_button_grid)
 
-        self.d9 = Button(self, text=")", **self.default_button_style, command = lambda : self.ajout_calcul(")"))
-        self.d9.grid(column=2, row=2, **self.default_button_grid)
+        self.pourcent = Button(self, text="%", **self.default_button_style, command = self.pourcent)
+        self.pourcent.grid(column=2, row=2, **self.default_button_grid)
 
-        self.sub = Button(self, text="-", **self.default_button_style, command = lambda : self.ajout_calcul("-"))
-        self.sub.grid(column=3, row=2, **self.default_button_grid)
+        self.div2 = Button(self, text="1/x", **self.default_button_style, command = self.unSurX)
+        self.div2.grid(column=3, row=2, **self.default_button_grid)
         
         # Quatrième ligne
-        self.d7 = Button(self, text="7", **self.default_button_style, command = lambda : self.ajout_calcul(7))
+        self.d7 = Button(self, text="mem", **self.default_button_style, command = lambda : self.secondaire())
         self.d7.grid(column=0, row=3, **self.default_button_grid)
 
-        self.d8 = Button(self, text="8", **self.default_button_style, command = lambda : self.ajout_calcul(8))
+        self.d8 = Button(self, text="(", **self.default_button_style, command = lambda : self.ajout_calcul("("))
         self.d8.grid(column=1, row=3, **self.default_button_grid)
 
-        self.d9 = Button(self, text="9", **self.default_button_style, command = lambda : self.ajout_calcul(9))
+        self.d9 = Button(self, text=")", **self.default_button_style, command = lambda : self.ajout_calcul(")"))
         self.d9.grid(column=2, row=3, **self.default_button_grid)
 
+        self.mul = Button(self, text="*", **self.default_button_style, command = lambda : self.ajout_calcul("*"))
+        self.mul.grid(column=3, row=3, **self.default_button_grid)
+        
+        
+         # Cinquième ligne
+        self.d7 = Button(self, text="7", **self.default_button_style, command = lambda : self.ajout_calcul(7))
+        self.d7.grid(column=0, row=4, **self.default_button_grid)
+
+        self.d8 = Button(self, text="8", **self.default_button_style, command = lambda : self.ajout_calcul(8))
+        self.d8.grid(column=1, row=4, **self.default_button_grid)
+
+        self.d9 = Button(self, text="9", **self.default_button_style, command = lambda : self.ajout_calcul(9))
+        self.d9.grid(column=2, row=4, **self.default_button_grid)
+
         self.sub = Button(self, text="-", **self.default_button_style, command = lambda : self.ajout_calcul("-"))
-        self.sub.grid(column=3, row=3, **self.default_button_grid)
-
-        # Cinquième ligne
-        self.d4 = Button(self, text="4", **self.default_button_style, command = lambda : self.ajout_calcul(4))
-        self.d4.grid(column=0, row=4, **self.default_button_grid)
-
-        self.d5 = Button(self, text="5", **self.default_button_style, command = lambda : self.ajout_calcul(5))
-        self.d5.grid(column=1, row=4, **self.default_button_grid)
-
-        self.d6 = Button(self, text="6", **self.default_button_style, command = lambda : self.ajout_calcul(6))
-        self.d6.grid(column=2, row=4, **self.default_button_grid)
-
-        self.add = Button(self, text="+", **self.default_button_style, command = lambda : self.ajout_calcul("+"))
-        self.add.grid(column=3, row=4, **self.default_button_grid)
+        self.sub.grid(column=3, row=4, **self.default_button_grid)
 
         # Sixième ligne
+        self.d4 = Button(self, text="4", **self.default_button_style, command = lambda : self.ajout_calcul(4))
+        self.d4.grid(column=0, row=5, **self.default_button_grid)
+
+        self.d5 = Button(self, text="5", **self.default_button_style, command = lambda : self.ajout_calcul(5))
+        self.d5.grid(column=1, row=5, **self.default_button_grid)
+
+        self.d6 = Button(self, text="6", **self.default_button_style, command = lambda : self.ajout_calcul(6))
+        self.d6.grid(column=2, row=5, **self.default_button_grid)
+
+        self.add = Button(self, text="+", **self.default_button_style, command = lambda : self.ajout_calcul("+"))
+        self.add.grid(column=3, row=5, **self.default_button_grid)
+
+       # Septième ligne
         self.d1 = Button(self, text="1", **self.default_button_style, command = lambda : self.ajout_calcul(1))
-        self.d1.grid(column=0, row=5, **self.default_button_grid)
+        self.d1.grid(column=0, row=6, **self.default_button_grid)
 
         self.d2 = Button(self, text="2", **self.default_button_style, command = lambda : self.ajout_calcul(2))
-        self.d2.grid(column=1, row=5, **self.default_button_grid)
+        self.d2.grid(column=1, row=6, **self.default_button_grid)
 
         self.d3 = Button(self, text="3", **self.default_button_style, command = lambda : self.ajout_calcul(3))
-        self.d3.grid(column=2, row= 5, **self.default_button_grid)
+        self.d3.grid(column=2, row= 6, **self.default_button_grid)
 
         self.equal = Button(self, text="=",**self.equal_button_style, command = self.eval_calcul) 
-        self.equal.grid(column=3, row=5, rowspan=2, **self.default_button_grid)
+        self.equal.grid(column=3, row=6, rowspan=2, **self.default_button_grid)
 
-        # Septième ligne
+
+        # Huitième ligne
         self.d0 = Button(self, text="0", **self.default_button_style, command = lambda : self.ajout_calcul(0))
-        self.d0.grid(column=0, row=6, columnspan=2, **self.default_button_grid)
+        self.d0.grid(column=0, row=7, columnspan=2, **self.default_button_grid)
 
         self.dot = Button(self, text=".", **self.default_button_style, command = lambda : self.ajout_calcul("."))
-        self.dot.grid(column=2, row=6, **self.default_button_grid)
+        self.dot.grid(column=2, row=7, **self.default_button_grid)
 
         # On change la couleur de fond et les marges de la fenêtre.
         self.configure(bg="#333333", padx=10, pady=10)
-
-
+        
+            
 fenetre= Calculatrice()
 fenetre.title("Calculatrice")
 fenetre.bind("<Return>", fenetre.even_calcul)
+fenetre.bind("<Key>", fenetre.clavier)
 fenetre.mainloop()
 
